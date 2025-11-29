@@ -1,6 +1,3 @@
-Here's your README in proper Markdown format:
-
-```markdown
 # Decentralized Supply Chain Management System (R3 Corda)
 
 ![Java](https://img.shields.io/badge/Java-JDK_1.8-orange) ![Corda](https://img.shields.io/badge/R3_Corda-Distributed_Ledger-red) ![Gradle](https://img.shields.io/badge/Gradle-Build_Tool-blue)
@@ -155,3 +152,20 @@ flow start CreateProductFlow productName: "", location: "Nowhere", receiver: Par
 
 ---
 
+## 🔧 Troubleshooting
+
+**1. "Address already in use" Error:**
+If the nodes crash or don't start, old Java processes might be blocking the ports.
+Run this command (Windows) to kill them:
+
+```cmd
+taskkill /F /IM java.exe
+```
+
+**2. "Flow stuck at Collecting Signatures":**
+This means PartyB is not replying. Ensure you have rebuilt the nodes (`gradlew deployNodes`) after adding the Responder logic.
+
+**3. "Flow not found":**
+Ensure you are typing the class name exactly: `CreateProductFlow` (Case sensitive).
+
+---
