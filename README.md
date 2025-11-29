@@ -1,142 +1,184 @@
-<p align="center">
-  <img src="https://www.corda.net/wp-content/uploads/2016/11/fg005_corda_b.png" alt="Corda" width="500">
-</p>
+Here's your README in proper Markdown format:
 
-# CorDapp Template - Java [<img src="https://raw.githubusercontent.com/corda/samples-java/master/webIDE.png" height=25 />](https://ide.corda.net/?folder=/home/coder/cordapp-template-java)
+```markdown
+# Decentralized Supply Chain Management System (R3 Corda)
 
-Welcome to the Java CorDapp template. The CorDapp template is a stubbed-out CorDapp that you can use to bootstrap 
-your own CorDapps.
+![Java](https://img.shields.io/badge/Java-JDK_1.8-orange) ![Corda](https://img.shields.io/badge/R3_Corda-Distributed_Ledger-red) ![Gradle](https://img.shields.io/badge/Gradle-Build_Tool-blue)
 
-**This is the Java version of the CorDapp template. The Kotlin equivalent is 
-[here](https://github.com/corda/cordapp-template-kotlin/).**
+A decentralized application (**CorDapp**) built on **R3 Corda** to track product ownership and history in a supply chain. This project establishes a "Single Source of Truth" between Manufacturers and Wholesalers, eliminating data silos and enforcing automated business rules via Smart Contracts.
 
-# Pre-Requisites
+---
 
-See https://docs.corda.net/getting-set-up.html.
+## 🚀 Key Features
 
-# Usage
+* **Immutable Ledger:** Products are tracked using `LinearState`, ensuring a permanent, unchangeable history of the asset.
+* **Smart Contract Validation:** Automated "Digital Gatekeepers" (`ProductContract`) enforce rules (e.g., Product Name cannot be empty) before any data is written to the ledger.
+* **Peer-to-Peer Privacy:** Transaction data is shared *only* between the Manufacturer and the Receiver using Corda's privacy model (Party C cannot see the data).
+* **Automated Business Logic:** Custom Responder flows automatically reject transactions that violate specific business policies (e.g., rejecting goods labeled "Damaged").
 
-## Running tests inside IntelliJ
-	
-We recommend editing your IntelliJ preferences so that you use the Gradle runner - this means that the quasar utils
-plugin will make sure that some flags (like ``-javaagent`` - see below) are
-set for you.
+---
 
-To switch to using the Gradle runner:
+## 🏗️ System Architecture
 
-* Navigate to ``Build, Execution, Deployment -> Build Tools -> Gradle -> Runner`` (or search for `runner`)
-  * Windows: this is in "Settings"
-  * MacOS: this is in "Preferences"
-* Set "Delegate IDE build/run actions to gradle" to true
-* Set "Run test using:" to "Gradle Test Runner"
+### 1. The State (`ProductState.java`)
+Defines the schema of the asset on the ledger.
+* **Type:** `LinearState` (Tracks history via a unique `linearId`).
+* **Fields:** `productName`, `location`, `currentOwner`, `newOwner`.
+* **Privacy:** `getParticipants()` ensures only the owner and new owner see the transaction.
 
-If you would prefer to use the built in IntelliJ JUnit test runner, you can run ``gradlew installQuasar`` which will
-copy your quasar JAR file to the lib directory. You will then need to specify ``-javaagent:lib/quasar.jar``
-and set the run directory to the project root directory for each test.
+### 2. The Contract (`ProductContract.java`)
+Enforces global validation rules (The "Digital Police").
+* **Rule 1:** A `Create` transaction must have 0 inputs and 1 output.
+* **Rule 2:** Product Name cannot be empty.
+* **Rule 3:** During a `Transfer`, the `linearId` must remain constant (Asset Preservation).
 
-## Running the nodes
+### 3. The Workflow (`CreateProductFlow.java` & `Responder`)
+Manages the transaction lifecycle.
+* **Initiator:** Builds the transaction, signs it, and requests the counterparty's signature.
+* **Responder:** Verifies the transaction and runs local business logic checks (e.g., `if name contains "Damaged" -> REJECT`).
 
-See https://docs.corda.net/tutorial-cordapp.html#running-the-example-cordapp.
+---
 
-## Interacting with the nodes
+## 🛠️ Prerequisites
 
-### Shell
+* **Java 8 (JDK 1.8)** - *Strictly required for Corda.*
+* **IntelliJ IDEA** (Recommended IDE).
+* **Git**.
 
-When started via the command line, each node will display an interactive shell:
+---
 
-    Welcome to the Corda interactive shell.
-    Useful commands include 'help' to see what is available, and 'bye' to shut down the node.
-    
-    Tue Nov 06 11:58:13 GMT 2018>>>
+## ⚡ How to Run the Project
 
-You can use this shell to interact with your node. For example, enter `run networkMapSnapshot` to see a list of 
-the other nodes on the network:
+### 1. Clone & Build
+```bash
+git clone https://github.com/sgk0204/Decentralized-Supply-Chain-Management-using-R3-Corda.git
+cd Decentralized-Supply-Chain-Management-using-R3-Corda
+```
 
-    Tue Nov 06 11:58:13 GMT 2018>>> run networkMapSnapshot
-    [
-      {
-      "addresses" : [ "localhost:10002" ],
-      "legalIdentitiesAndCerts" : [ "O=Notary, L=London, C=GB" ],
-      "platformVersion" : 3,
-      "serial" : 1541505484825
-    },
-      {
-      "addresses" : [ "localhost:10005" ],
-      "legalIdentitiesAndCerts" : [ "O=PartyA, L=London, C=GB" ],
-      "platformVersion" : 3,
-      "serial" : 1541505382560
-    },
-      {
-      "addresses" : [ "localhost:10008" ],
-      "legalIdentitiesAndCerts" : [ "O=PartyB, L=New York, C=US" ],
-      "platformVersion" : 3,
-      "serial" : 1541505384742
-    }
-    ]
-    
-    Tue Nov 06 12:30:11 GMT 2018>>> 
+**Build the Nodes:**
 
-You can find out more about the node shell [here](https://docs.corda.net/shell.html).
+```bash
+# Windows
+gradlew deployNodes
 
-### Client
+# Mac/Linux
+./gradlew deployNodes
+```
 
-`clients/src/main/java/com/template/Client.java` defines a simple command-line client that connects to a node via RPC 
-and prints a list of the other nodes on the network.
+### 2. Start the Network
 
-#### Running the client
+Navigate to the build folder and start the nodes:
 
-##### Via the command line
+```bash
+cd build/nodes
+runnodes.bat  # (Windows) or ./runnodes (Mac/Linux)
+```
 
-Run the `runTemplateClient` Gradle task. By default, it connects to the node with RPC address `localhost:10006` with 
-the username `user1` and the password `test`.
+*Wait for the `>>>` prompt to appear in the PartyA and PartyB terminals.*
 
-##### Via IntelliJ
+---
 
-Run the `Run Template Client` run configuration. By default, it connects to the node with RPC address `localhost:10006` 
-with the username `user1` and the password `test`.
+## 🧪 Usage & Testing Scenarios
 
-### Webserver
+### Scenario A: Successful Creation (Happy Path)
 
-`clients/src/main/java/com/template/webserver/` defines a simple Spring webserver that connects to a node via RPC and 
-allows you to interact with the node over HTTP.
+**Goal:** Manufacturer (PartyA) creates a valid product and sends it to Wholesaler (PartyB).
 
-The API endpoints are defined here:
+Run this in **PartyA** terminal:
 
-     clients/src/main/java/com/template/webserver/Controller.java
+```bash
+flow start CreateProductFlow productName: "Samsung Galaxy S24", location: "Noida Factory", receiver: PartyB
+```
 
-And a static webpage is defined here:
+**Expected Output:**
 
-     clients/src/main/resources/static/
+> `Flow completed with result: SignedTransaction(id=...)`
 
-#### Running the webserver
+**Verify Data:**
+Run this in **PartyB** terminal to see the ledger update:
 
-##### Via the command line
+```bash
+run vaultQuery contractStateType: com.template.states.ProductState
+```
 
-Run the `runTemplateServer` Gradle task. By default, it connects to the node with RPC address `localhost:10006` with 
-the username `user1` and the password `test`, and serves the webserver on port `localhost:10050`.
+---
 
-##### Via IntelliJ
+### Scenario B: Business Logic Rejection (Failing Path)
 
-Run the `Run Template Server` run configuration. By default, it connects to the node with RPC address `localhost:10006` 
-with the username `user1` and the password `test`, and serves the webserver on port `localhost:10050`.
+**Goal:** Test if the **Responder** logic catches bad data. PartyB is configured to reject "Damaged" goods.
 
-#### Interacting with the webserver
+Run this in **PartyA** terminal:
 
-The static webpage is served on:
+```bash
+flow start CreateProductFlow productName: "Damaged Samsung Galaxy", location: "Noida Factory", receiver: PartyB
+```
 
-    http://localhost:10050
+**Expected Output:**
 
-While the sole template endpoint is served on:
+> `net.corda.core.flows.FlowException: REJECTED: We do not accept damaged goods.`
 
-    http://localhost:10050/templateendpoint
-    
-# Extending the template
+*Note: The transaction is blocked instantly and nothing is saved to the ledger.*
 
-You should extend this template as follows:
+---
 
-* Add your own state and contract definitions under `contracts/src/main/java/`
-* Add your own flow definitions under `workflows/src/main/java/`
-* Extend or replace the client and webserver under `clients/src/main/java/`
+### Scenario C: Contract Rejection (Invalid Input)
 
-For a guided example of how to extend this template, see the Hello, World! tutorial 
-[here](https://docs.corda.net/hello-world-introduction.html).
+**Goal:** Test if the **Smart Contract** catches empty data.
+
+Run this in **PartyA** terminal:
+
+```bash
+flow start CreateProductFlow productName: "", location: "Nowhere", receiver: PartyB
+```
+
+**Expected Output:**
+
+> `TransactionVerificationException$ContractRejection: Product name cannot be empty.`
+
+---
+
+## 📂 Project Structure
+
+```
+.
+├── contracts/src/main/java/com/template/
+│   ├── states/
+│   │   └── ProductState.java       # The Data Schema
+│   └── contracts/
+│       └── ProductContract.java    # The Validation Rules
+│
+└── workflows/src/main/java/com/template/
+    └── flows/
+        ├── CreateProductFlow.java      # Sender Logic
+        └── CreateProductResponder.java # Receiver Logic (Rejection Check)
+```
+
+---
+
+## 🔧 Troubleshooting
+
+**1. "Address already in use" Error:**
+If the nodes crash or don't start, old Java processes might be blocking the ports.
+Run this command (Windows) to kill them:
+
+```cmd
+taskkill /F /IM java.exe
+```
+
+**2. "Flow stuck at Collecting Signatures":**
+This means PartyB is not replying. Ensure you have rebuilt the nodes (`gradlew deployNodes`) after adding the Responder logic.
+
+**3. "Flow not found":**
+Ensure you are typing the class name exactly: `CreateProductFlow` (Case sensitive).
+
+---
+
+## 👤 Author
+
+**Sista Gopala Krishna**
+
+* **GitHub:** [github.com/sgk0204](https://github.com/sgk0204)
+* **LinkedIn:** [linkedin.com/in/sista-gopala-krishna](https://www.linkedin.com/in/sista-gopala-krishna-243019237/)
+```
+
+This is now properly formatted as a clean Markdown file. You can copy this entire code block and save it as `README.md` in your project repository!
